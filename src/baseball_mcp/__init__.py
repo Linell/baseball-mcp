@@ -4,6 +4,9 @@ __version__ = "0.1.0"
 __author__ = "Linell Bonnette"
 __email__ = "tlbonnette@gmail.com"
 
+# Public re-exports
 from .server import BaseballMCPServer
 
-__all__ = ["BaseballMCPServer"]
+__all__ = [
+    "BaseballMCPServer",
+]

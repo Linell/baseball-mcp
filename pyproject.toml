@@ -28,6 +28,12 @@ dependencies = [
     "pybaseball>=2.2.0",
     "asyncio-mqtt>=0.11.0",
     "pydantic>=2.0.0",
+    "pandas>=2.2.0",
+    "SQLAlchemy>=2.0.0",
+    "typer>=0.9.0",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.22.0",
+    "tabulate>=0.9.0",
 ]
 
 [project.optional-dependencies]
@@ -46,7 +52,7 @@ Repository = "https://github.com/yourusername/baseball-mcp"
 Issues = "https://github.com/yourusername/baseball-mcp/issues"
 
 [project.scripts]
-baseball-mcp = "baseball_mcp.server:main"
+baseball-mcp = "baseball_mcp.cli:main"
 
 [tool.black]
 line-length = 88
@@ -68,7 +74,7 @@ select = [
 ]
 
 [tool.mypy]
-python_version = "3.8"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true

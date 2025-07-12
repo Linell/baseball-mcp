@@ -15,29 +15,53 @@ class TestBaseballMCPServer:
         assert server.server.name == "baseball-mcp"
 
     @pytest.mark.asyncio
-    async def test_get_player_stats_placeholder(self):
-        """Test the placeholder player stats method."""
+    async def test_get_player_stats(self, monkeypatch):
+        """Test player stats retrieval via loader with patched pybaseball."""
+        import pandas as pd
+
+        dummy_df = pd.DataFrame({"Name": ["Test Player"], "AVG": [0.300]})
+        monkeypatch.setattr(
+            "baseball_mcp.loaders.players.batting_stats", lambda year: dummy_df
+        )
+
         server = BaseballMCPServer()
-        result = await server._get_player_stats("Test Player", 2023)
+        result = await server._get_player_stats("Test Player", 2024)
         assert "Test Player" in result
-        assert "2023" in result
 
     @pytest.mark.asyncio
-    async def test_get_team_stats_placeholder(self):
-        """Test the placeholder team stats method."""
+    async def test_get_team_stats(self, monkeypatch):
+        """Test team stats retrieval via loader patch."""
+
+        import pandas as pd
+
+        dummy_df = pd.DataFrame({"Team": ["NYY"], "HR": [200]})
+        monkeypatch.setattr(
+            "baseball_mcp.server._load_team_stats",
+            lambda team, year: dummy_df,
+        )
+
         server = BaseballMCPServer()
-        result = await server._get_team_stats("NYY", 2023)
+        result = await server._get_team_stats("NYY", 2024)
         assert "NYY" in result
-        assert "2023" in result
 
     @pytest.mark.asyncio
-    async def test_get_schedule_placeholder(self):
-        """Test the placeholder schedule method."""
+    async def test_get_schedule(self, monkeypatch):
+        """Test schedule retrieval via loader patch."""
+
+        import pandas as pd
+
+        dates = pd.date_range("2024-04-01", "2024-04-05", freq="D")
+        dummy_df = pd.DataFrame({"Date": dates, "Team": ["ATL"] * len(dates)})
+        monkeypatch.setattr(
+            "baseball_mcp.server._load_schedule",
+            lambda team, start, end: dummy_df,
+        )
+
         server = BaseballMCPServer()
-        result = await server._get_schedule("NYY", "2023-04-01", "2023-04-30")
-        assert "NYY" in result
-        assert "2023-04-01" in result
-        assert "2023-04-30" in result
+        res = await server._get_schedule("ATL", "2024-04-01", "2024-04-05")
+        assert "ATL" in res
+        assert "2024-04-01" in res
+        assert "2024-04-05" in res
 
     def test_server_has_required_methods(self):
         """Test that the server has all required methods."""
