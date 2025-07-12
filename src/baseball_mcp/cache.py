@@ -7,6 +7,8 @@ from datetime import datetime
 from io import StringIO
 from pathlib import Path
 from typing import Any
+import os
+import logging
 
 import pandas as pd
 from sqlalchemy import Column, DateTime, LargeBinary, String, create_engine
@@ -30,17 +32,47 @@ class Cache:
     """
 
     def __init__(self, db_path: str | Path | None = None) -> None:
+        """Create a cache.
+
+        If *db_path* is None we attempt to store the database at
+        ~/.config/baseball-mcp/baseball.db.  When that fails (e.g. read-only
+        filesystem) we transparently fall back to an in-memory cache.
+        This guarantees the server always starts even in constrained hosting platforms.
+        """
+        self._fallback_reason: str | None = None
+
         if db_path is None:
             home = Path.home()
-            self.db_path: str | Path = home / ".config" / "baseball-mcp" / "baseball.db"
-            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            self.db_path = home / ".config" / "baseball-mcp" / "baseball.db"
+            try:
+                self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            except (PermissionError, OSError) as exc:
+                # Cannot create the directory – fallback to memory
+                self.db_path = ":memory:"
+                self._fallback_reason = f"{type(exc).__name__}: {exc}"
         else:
-            # Allow in-memory DB via ":memory:"
             self.db_path = db_path if db_path == ":memory:" else Path(db_path)
 
         url = "sqlite:///:memory:" if self.db_path == ":memory:" else f"sqlite:///{self.db_path}"
-        self.engine = create_engine(url, future=True)
-        Base.metadata.create_all(self.engine)
+
+        # Create the SQLAlchemy engine; if the underlying SQLite file fails to
+        # open (e.g. read-only parent dir) we fallback once more.
+        try:
+            self.engine = create_engine(url, future=True)
+            Base.metadata.create_all(self.engine)
+        except (OSError, PermissionError) as exc:
+            # One last fallback – ensures the server keeps running.
+            logging.getLogger(__name__).warning(
+                "Cache: falling back to in-memory DB because opening %s failed: %s", self.db_path, exc
+            )
+            self.db_path = ":memory:"
+            self.engine = create_engine("sqlite:///:memory:", future=True)
+            Base.metadata.create_all(self.engine)
+            self._fallback_reason = self._fallback_reason or f"{type(exc).__name__}: {exc}"
+
+        if self._fallback_reason:
+            logging.getLogger(__name__).info("Cache disabled (%s). Running without on-disk persistence.", self._fallback_reason)
+
         self.Session = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     # Low-level helpers -----------------------------------------------------

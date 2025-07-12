@@ -24,6 +24,6 @@ startCommand:
         maximum: 1000
     required: []
   exampleConfig:
-    cache_reset: false
+    cache_reset: true
     log_level: "INFO"
     max_results: 100 
