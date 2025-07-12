@@ -59,14 +59,19 @@ Run the STDIO server (default):
 baseball-mcp run
 ```
 
-Run the HTTP server on port 8000:
+Run the HTTP server on port 3000:
 ```bash
-baseball-mcp http --port 8000
+baseball-mcp http --port 3000
 ```
 
 Reset the on-disk cache:
 ```bash
 baseball-mcp cache-reset --confirm
+```
+
+Check server health:
+```bash
+baseball-mcp health
 ```
 
 ### Available Tools
@@ -105,6 +110,37 @@ The server supports various team abbreviations for convenience:
 - **Washington Nationals**: `WSH` or `WSN`
 
 For a complete list, use the `list_team_abbreviations` tool.
+
+## Deployment
+
+This MCP server can be deployed to services like [Smithery](https://smithery.ai) or any container platform.
+
+### Configuration
+
+The server supports the following configuration options via query parameters:
+
+- `cache_reset` (boolean): Whether to reset the cache on startup
+- `log_level` (string): Logging level (DEBUG, INFO, WARNING, ERROR)
+- `max_results` (integer): Maximum number of results to return (1-1000)
+
+Example: `GET /mcp?cache_reset=false&log_level=INFO&max_results=100`
+
+### Local Testing
+
+Test the HTTP server locally:
+
+```bash
+# Start the server
+baseball-mcp http --port 3000
+
+# Test the MCP endpoint
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}},"id":1}'
+
+# Check health
+curl http://localhost:3000/health
+```
 
 ## Development
 

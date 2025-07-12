@@ -18,7 +18,7 @@ test:  ## Run tests
 	pytest -v
 
 lint:  ## Run linting
-	ruff check src tests
+	ruff check --fix src tests
 
 format:  ## Format code
 	black src tests
